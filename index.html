@@ -1,45 +1,64 @@
 <!DOCTYPE html>
-<html>
+<html lang="ar">
 <head>
-    <title>AI IP Shield</title>
+    <meta charset="UTF-8">
+    <title>AI IP Shield Pro</title>
     <style>
-        body { font-family: sans-serif; text-align: center; padding: 50px; background: #f4f4f4; }
-        .card { background: white; padding: 20px; border-radius: 10px; display: inline-block; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
-        input { display: block; margin: 10px auto; padding: 10px; width: 200px; }
-        button { background: #007bff; color: white; border: none; padding: 10px 20px; cursor: pointer; border-radius: 5px; }
-        #result { margin-top: 20px; font-weight: bold; font-size: 1.2em; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0f172a; color: white; text-align: center; padding: 50px; }
+        .container { background: #1e293b; padding: 30px; border-radius: 15px; display: inline-block; box-shadow: 0 10px 30px rgba(0,0,0,0.5); width: 400px; }
+        input { width: 80%; padding: 12px; margin: 20px 0; border-radius: 8px; border: none; font-size: 16px; }
+        button { background: #3b82f6; color: white; border: none; padding: 12px 25px; cursor: pointer; border-radius: 8px; font-weight: bold; width: 85%; }
+        button:hover { background: #2563eb; }
+        #loader { display: none; margin: 20px; color: #94a3b8; }
+        .result-box { margin-top: 25px; padding: 15px; border-radius: 8px; display: none; background: #334155; }
+        .danger { color: #ef4444; }
+        .safe { color: #22c55e; }
     </style>
 </head>
 <body>
-    <div class="card">
-        <h2>🛡️ نظام فحص الـ IP بالذكاء الاصطناعي</h2>
-        <input type="number" id="attempts" placeholder="عدد المحاولات">
-        <input type="number" id="freq" placeholder="التكرار (مثلاً 5.5)">
-        <select id="vpn" style="padding: 10px; margin-bottom: 10px;">
-            <option value="0">بدون VPN</option>
-            <option value="1">مستخدم VPN</option>
-        </select>
-        <input type="number" id="rank" placeholder="كود الدولة (1-10)">
-        <button onclick="checkIP()">فحص الآن</button>
-        <div id="result"></div>
+    <div class="container">
+        <h1>🛡️ AI IP Shield</h1>
+        <p>أدخل عنوان IP لتحليله عالمياً بالذكاء الاصطناعي</p>
+        <input type="text" id="ipInput" placeholder="مثال: 8.8.8.8">
+        <button onclick="analyzeIP()">تحليل فوراً</button>
+        <div id="loader">جاري الاتصال بالمواقع العالمية...</div>
+        <div id="resultBox" class="result-box">
+            <div id="ipDisplay" style="font-weight: bold;"></div>
+            <div id="decisionDisplay" style="font-size: 1.5em; margin: 10px 0;"></div>
+            <div id="scoreDisplay"></div>
+        </div>
     </div>
 
     <script>
-        async function checkIP() {
-            const data = {
-                attempts: parseInt(document.getElementById('attempts').value),
-                is_vpn: parseInt(document.getElementById('vpn').value),
-                frequency: parseFloat(document.getElementById('freq').value),
-                country_rank: parseInt(document.getElementById('rank').value)
-            };
+        async function analyzeIP() {
+            const ip = document.getElementById('ipInput').value;
+            const loader = document.getElementById('loader');
+            const resultBox = document.getElementById('resultBox');
+            
+            if(!ip) return alert("يرجى إدخال IP");
 
-            const response = await fetch('http://127.0.0.1:5000/predict', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(data)
-            });
-            const result = await response.json();
-            document.getElementById('result').innerText = `القرار: ${result.decision} (نسبة الخطر: ${result.threat_score})`;
+            loader.style.display = 'block';
+            resultBox.style.display = 'none';
+
+            try {
+                const response = await fetch('http://127.0.0.1:5000/predict_real', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ ip: ip })
+                });
+                const res = await response.json();
+                
+                loader.style.display = 'none';
+                resultBox.style.display = 'block';
+                
+                document.getElementById('ipDisplay').innerText = `الـ IP المفحوص: ${res.ip}`;
+                document.getElementById('decisionDisplay').innerText = res.decision;
+                document.getElementById('decisionDisplay').className = res.is_malicious ? 'danger' : 'safe';
+                document.getElementById('scoreDisplay').innerText = `درجة التهديد: ${res.threat_score}`;
+            } catch (error) {
+                alert("خطأ في الاتصال بالسيرفر");
+                loader.style.display = 'none';
+            }
         }
     </script>
 </body>
